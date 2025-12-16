@@ -130,10 +130,12 @@ export function middleware(request: NextRequest) {
   }
 
   // =========================================================================
-  // ROUTE 6: Tenant subdomain ([tenant].dineos.localhost:3000)
-  // Customer-facing menu and ordering experience
+  // ROUTE 6: Tenant subdomain ([tenant].dineos.localhost:3001)
+  // This handles both:
+  // - Customer-facing menu: looptech.dineos.localhost:3001/
+  // - Tenant admin panel: looptech.dineos.localhost:3001/admin/*
   // =========================================================================
-  // This is a tenant subdomain (e.g., burgerhouse.dineos.localhost:3000)
+  // This is a tenant subdomain (e.g., looptech.dineos.localhost:3001)
   // Rewrite to /site/[tenant] and pass tenant info via headers
   url.pathname = `/site/${subdomain}${pathname === '/' ? '' : pathname}`;
   
@@ -142,6 +144,11 @@ export function middleware(request: NextRequest) {
   // Pass tenant identifier via header for API calls
   response.headers.set('x-tenant-id', subdomain);
   response.headers.set('x-tenant-slug', subdomain);
+  
+  // Mark if this is an admin route for the tenant
+  if (pathname.startsWith('/admin')) {
+    response.headers.set('x-is-tenant-admin', 'true');
+  }
   
   return response;
 }

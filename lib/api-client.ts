@@ -156,8 +156,11 @@ class ApiClient {
   // =========================================================================
 
   auth = {
+    // Tenant admin/user login
+    // Backend endpoint: POST /api/users/login
+    // Headers: x-tenant-id: {slug}
     login: (credentials: LoginRequest): Promise<ApiResponse<LoginResponse>> =>
-      this.post('/auth/login', credentials),
+      this.post('/users/login', credentials),
 
     logout: (): Promise<ApiResponse<void>> =>
       this.post('/auth/logout'),
@@ -168,7 +171,7 @@ class ApiClient {
     me: (): Promise<ApiResponse<User>> =>
       this.get('/auth/me'),
 
-    // Superadmin login (separate endpoint)
+    // Superadmin login (separate endpoint if different from tenant login)
     superadminLogin: (credentials: LoginRequest): Promise<ApiResponse<LoginResponse>> =>
       this.post('/auth/superadmin/login', credentials),
   };
@@ -231,9 +234,44 @@ class ApiClient {
   // =========================================================================
 
   tenant = {
-    // Get tenant info by slug (used for customer-facing pages)
+    // Check if tenant exists (lightweight validation)
+    // Backend endpoint: GET /api/tenants/exists?slug=looptech
+    // Returns 200 if exists, 404 if not
+    exists: async (slug: string): Promise<ApiResponse<{ exists: boolean }>> => {
+      try {
+        const response = await fetch(`${this.baseUrl}/tenants/exists?slug=${slug}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          return {
+            success: true,
+            data: { exists: true },
+          };
+        } else {
+          return {
+            success: true,
+            data: { exists: false },
+          };
+        }
+      } catch (error) {
+        return {
+          success: false,
+          error: {
+            code: 'NETWORK_ERROR',
+            message: error instanceof Error ? error.message : 'Failed to check tenant',
+          },
+        };
+      }
+    },
+
+    // Get tenant info by slug (used for customer-facing pages and validation)
+    // Backend endpoint: GET /api/tenants?slug=looptech
     getBySlug: (slug: string): Promise<ApiResponse<Tenant>> =>
-      this.get(`/tenants/${slug}`),
+      this.get(`/tenants?slug=${slug}`),
 
     // Get current tenant info (uses x-tenant-id header)
     getCurrent: (): Promise<ApiResponse<Tenant>> =>

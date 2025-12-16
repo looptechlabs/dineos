@@ -5,7 +5,6 @@
 // ============================================================================
 
 import { headers } from 'next/headers';
-import { createTenantApiClient } from '@/lib/api-client';
 import type { Tenant } from '@/lib/types';
 
 // ============================================================================
@@ -48,57 +47,79 @@ export interface TenantFetchResult {
   suspended: boolean;
 }
 
+
+
 /**
- * Fetch tenant data by slug from the API
+ * Check if tenant exists by calling backend API
+ * Simple check: if API returns 200, tenant exists
  * For use in Server Components during layout/page rendering
  */
 export async function fetchTenantBySlug(slug: string): Promise<TenantFetchResult> {
   try {
-    const apiClient = createTenantApiClient(slug);
-    const response = await apiClient.tenant.getBySlug(slug);
-
-    if (!response.success || !response.data) {
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://52.63.95.108:8080/api';
+    console.log(`[fetchTenantBySlug] Checking if tenant exists: ${slug}`);
+    
+    // Call backend API to check if tenant exists
+    const existsUrl = `${apiBaseUrl}/tenants/exists?slug=${slug}`;
+    console.log(`[fetchTenantBySlug] Calling: ${existsUrl}`);
+    
+    const response = await fetch(existsUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
+    
+    console.log(`[fetchTenantBySlug] Response status: ${response.status}`);
+    
+    // If status is 200, tenant exists
+    if (response.status === 200) {
+      console.log(`[fetchTenantBySlug] Tenant exists!`);
       return {
-        tenant: null,
-        error: response.error?.message || 'Tenant not found',
-        notFound: true,
-        suspended: false,
-      };
-    }
-
-    const tenant = response.data;
-
-    // Check tenant status
-    if (tenant.status === 'suspended') {
-      return {
-        tenant,
-        error: 'This restaurant is currently suspended',
+        tenant: {
+          id: slug,
+          slug: slug,
+          name: slug,
+          ownerEmail: '',
+          status: 'active',
+          settings: {
+            currency: 'NPR',
+            timezone: 'Asia/Kathmandu',
+            language: 'en',
+            orderingEnabled: true,
+            reservationsEnabled: false,
+            deliveryEnabled: false,
+            taxRate: 13,
+          },
+          branding: {
+            primaryColor: '#6366F1',
+            secondaryColor: '#1F2937',
+            accentColor: '#F59E0B',
+          },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        error: null,
         notFound: false,
-        suspended: true,
-      };
-    }
-
-    if (tenant.status === 'inactive') {
-      return {
-        tenant: null,
-        error: 'This restaurant is currently inactive',
-        notFound: true,
         suspended: false,
       };
     }
 
+    // Tenant doesn't exist
+    console.log(`[fetchTenantBySlug] Tenant not found`);
     return {
-      tenant,
-      error: null,
-      notFound: false,
+      tenant: null,
+      error: 'Restaurant doesn\'t exist',
+      notFound: true,
       suspended: false,
     };
   } catch (error) {
-    console.error('Error fetching tenant:', error);
+    console.error('[fetchTenantBySlug] Error:', error);
     return {
       tenant: null,
-      error: 'Failed to load restaurant information',
-      notFound: false,
+      error: 'Failed to check restaurant',
+      notFound: true,
       suspended: false,
     };
   }
