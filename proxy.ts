@@ -54,7 +54,7 @@ function isReservedSubdomain(subdomain: string | null): boolean {
   return RESERVED_SUBDOMAINS.includes(subdomain.toLowerCase());
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const url = request.nextUrl.clone();
   const hostname = request.headers.get('host') || '';
   const subdomain = getSubdomain(hostname);
@@ -154,15 +154,15 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Match all paths except static files
+  // Match all paths except static files and HMR WebSocket
   matcher: [
     /*
      * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
+     * - _next (all Next.js internal paths including HMR WebSocket)
+     * - api routes (handled separately)
      * - favicon.ico (favicon file)
      * - public files (public folder)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    '/((?!_next|api|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 };

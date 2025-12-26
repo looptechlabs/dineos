@@ -16,6 +16,7 @@ export async function checkTenantExists(slug: string): Promise<boolean> {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'X-Internal-API-Key': 'dVJOZclvTjIkVrz3CHp3vgYgyAreoyNLTg3zL24tbfvk'
       },
     });
     
