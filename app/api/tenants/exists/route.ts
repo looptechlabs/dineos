@@ -6,8 +6,9 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
+import { env } from '@/lib/config/env';
 
-const API_BASE_URL = 'http://52.63.95.108:8080/api';
+const API_BASE_URL = `${env.API_BASE_URL}`;
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,6 +31,8 @@ export async function GET(request: NextRequest) {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'X-Internal-API-Key': 'dVJOZclvTjIkVrz3CHp3vgYgyAreoyNLTg3zL24tbfvk'
+
       },
     });
 

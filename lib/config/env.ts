@@ -12,7 +12,7 @@ const getEnvVar = (key: string, defaultValue?: string): string => {
 
 export const env = {
   // API Configuration
-  API_BASE_URL: getEnvVar('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:8080/api'),
+  API_BASE_URL: getEnvVar('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:8080/api/v1'),
   
   // Domain Configuration
   ROOT_DOMAIN: getEnvVar('NEXT_PUBLIC_ROOT_DOMAIN', 'dineos.localhost:3000'),
