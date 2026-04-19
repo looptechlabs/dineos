@@ -6,7 +6,7 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchMenusFromBackend, createMenuOnBackend } from '@/lib/services/menus.service';
+import { fetchMenusFromBackend, createMenuOnBackend } from '@/lib/services/menus/menus.service';
 import { getTenantFromBody, isValidToken } from '@/lib/utils/token';
 
 /**

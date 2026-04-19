@@ -5,7 +5,7 @@
 // Used by Next.js API routes only
 // ============================================================================
 
-import { getBackendBaseUrl, getBackendHeaders, handleBackendResponse } from './backend-client';
+import { getBackendBaseUrl, getBackendHeaders, handleBackendResponse } from '../backend-client';
 
 export interface Menu {
   id?: number;

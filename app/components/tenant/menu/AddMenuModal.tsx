@@ -104,7 +104,7 @@ export default function AddMenuModal({
               onChange={handleChange}
               required
               placeholder="e.g., Main Dinner Menu"
-              className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-0"
+              className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-offset-0 focus:border-transparent transition-all duration-200 shadow-sm"
               style={{ '--tw-ring-color': primaryColor } as React.CSSProperties}
             />
           </div>
@@ -122,7 +122,7 @@ export default function AddMenuModal({
               required
               placeholder="e.g., Dinner options for indoor dining"
               rows={3}
-              className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-0 resize-none"
+              className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-offset-0 focus:border-transparent transition-all duration-200 shadow-sm resize-none"
               style={{ '--tw-ring-color': primaryColor } as React.CSSProperties}
             />
           </div>

@@ -54,7 +54,7 @@ function isReservedSubdomain(subdomain: string | null): boolean {
   return RESERVED_SUBDOMAINS.includes(subdomain.toLowerCase());
 }
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   const hostname = request.headers.get('host') || '';
   const subdomain = getSubdomain(hostname);
@@ -135,7 +135,7 @@ export function proxy(request: NextRequest) {
   // - Customer-facing menu: looptech.dineos.localhost:3001/
   // - Tenant admin panel: looptech.dineos.localhost:3001/admin/*
   // =========================================================================
-  // This is a tenant subdomain (e.g., looptech.dineos.localhost:3001)
+  // This is a tenant subdomain (e.g., pizzahut.dineos.localhost:3001)
   // Rewrite to /site/[tenant] and pass tenant info via headers
   url.pathname = `/site/${subdomain}${pathname === '/' ? '' : pathname}`;
   

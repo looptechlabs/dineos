@@ -30,6 +30,9 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
+  // for docker optimization
+  output: 'standalone',
 };
 
 export default nextConfig;

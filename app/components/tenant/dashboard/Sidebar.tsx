@@ -50,6 +50,11 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       href: '/dashboard/orders',
       icon: <ShoppingBag className="w-5 h-5" />,
     },
+    {
+      label: 'Manage Tables',
+      href: '/dashboard/tables',
+      icon: <ShoppingBag className="w-5 h-5" />,
+    },
   ];
 
   const isActive = (href: string) => {

@@ -42,7 +42,16 @@ export async function handleBackendResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const errorText = await response.text();
     console.error(`[Backend Client] Error ${response.status}:`, errorText);
-    throw new Error(`Backend API error: ${response.status} ${response.statusText}`);
+    
+    // Try to parse the error response to get the actual error message
+    try {
+      const errorData = JSON.parse(errorText);
+      const errorMessage = errorData.message || `Backend API error: ${response.status} ${response.statusText}`;
+      throw new Error(errorMessage);
+    } catch (parseError) {
+      // If parsing fails, use the raw error text or a generic message
+      throw new Error(errorText || `Backend API error: ${response.status} ${response.statusText}`);
+    }
   }
 
   const contentType = response.headers.get('content-type');
