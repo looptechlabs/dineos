@@ -5,7 +5,7 @@
 // Used by Next.js API routes only
 // ============================================================================
 
-import { getBackendBaseUrl, getBackendHeaders, handleBackendResponse } from './backend-client';
+import { getBackendBaseUrl, getBackendHeaders, handleBackendResponse } from '../backend-client';
 
 export interface Item {
   id?: number;
@@ -36,7 +36,8 @@ export async function fetchItemsFromBackend(
   const response = await fetch(backendUrl, {
     method: 'GET',
     headers: {
-      ...getBackendHeaders(token, tenantSlug),
+      //...getBackendHeaders(token, tenantSlug),
+      'Authorization': `Bearer ${token}`,
       'X-Internal-API-Key': 'dVJOZclvTjIkVrz3CHp3vgYgyAreoyNLTg3zL24tbfvk',
     },
     cache: 'no-store',

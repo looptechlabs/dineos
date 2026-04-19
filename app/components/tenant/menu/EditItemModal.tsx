@@ -116,7 +116,6 @@ export default function EditItemModal({
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-opacity-50 focus:border-transparent"
               style={{ 
-                focusRingColor: primaryColor,
                 outlineColor: primaryColor 
               }}
               placeholder="e.g., Chicken Pizza"
@@ -135,7 +134,6 @@ export default function EditItemModal({
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-opacity-50 focus:border-transparent resize-none"
               style={{ 
-                focusRingColor: primaryColor,
                 outlineColor: primaryColor 
               }}
               rows={3}
@@ -158,7 +156,6 @@ export default function EditItemModal({
               onChange={(e) => setFormData({ ...formData, price: e.target.value })}
               className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-opacity-50 focus:border-transparent"
               style={{ 
-                focusRingColor: primaryColor,
                 outlineColor: primaryColor 
               }}
               placeholder="10.99"
@@ -177,7 +174,6 @@ export default function EditItemModal({
               onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
               className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-opacity-50 focus:border-transparent"
               style={{ 
-                focusRingColor: primaryColor,
                 outlineColor: primaryColor 
               }}
             >

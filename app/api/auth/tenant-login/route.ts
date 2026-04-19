@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
   
   try {
     const body = await request.json();
+    
     console.log('[Tenant Login API] Request body:', body);
     
     const { tenantSlug, email, password } = body;

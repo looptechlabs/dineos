@@ -6,7 +6,7 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { updateItemOnBackend, deleteItemOnBackend } from '@/lib/services/items.service';
+import { updateItemOnBackend, deleteItemOnBackend } from '@/lib/services/menus/items.service';
 import { isValidToken } from '@/lib/utils/token';
 
 /**

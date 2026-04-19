@@ -1,382 +1,485 @@
 // ============================================================================
-// DineOS - Orders Page
+// DineOS - POS Orders Page
 // ============================================================================
-// Manage and track restaurant orders
+// Point of Sale interface for managing orders
 // ============================================================================
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTenant } from '@/context/TenantContext';
-import { 
-  ShoppingBag, 
-  Clock, 
-  CheckCircle, 
-  XCircle,
-  Filter,
-  MoreVertical,
-  Eye
-} from 'lucide-react';
+import { Search, ChevronDown } from 'lucide-react';
+import { fetchMenus, type Menu } from '@/lib/api/menus';
+import { fetchItems, type Item } from '@/lib/api/items';
+import { getAllTables, type Table } from '@/lib/api/tables';
+import { getAccessToken } from '@/lib/api/auth';
 
-interface Order {
-  id: string;
-  orderNumber: string;
-  customer: string;
-  items: number;
-  total: number;
-  status: 'pending' | 'preparing' | 'ready' | 'completed' | 'cancelled';
-  timestamp: string;
-  tableNumber?: string;
-}
+// POS Components
+import MenuFilterTabs from '@/app/components/tenant/orders/MenuFilterTabs';
+import ProductGrid from '@/app/components/tenant/orders/ProductGrid';
+import InvoicePanel, { type CartItem } from '@/app/components/tenant/orders/InvoicePanel';
+import AddNotesModal from '@/app/components/tenant/orders/AddNotesModal';
+import ViewToggle, { type POSView } from '@/app/components/tenant/orders/ViewToggle';
+import TableBasedOrders from '@/app/components/tenant/orders/TableBasedOrders';
 
-function OrderCard({ order, onStatusChange, onView }: { 
-  order: Order; 
-  onStatusChange: (orderId: string, newStatus: string) => void;
-  onView: (order: Order) => void;
-}) {
-  const { tenant } = useTenant();
-  const primaryColor = tenant?.branding?.primaryColor || '#6366F1';
-  const [showActions, setShowActions] = useState(false);
 
-  const statusConfig = {
-    pending: { 
-      color: 'bg-yellow-100 text-yellow-700 border-yellow-200', 
-      icon: <Clock className="w-4 h-4" />,
-      label: 'Pending'
-    },
-    preparing: { 
-      color: 'bg-blue-100 text-blue-700 border-blue-200', 
-      icon: <ShoppingBag className="w-4 h-4" />,
-      label: 'Preparing'
-    },
-    ready: { 
-      color: 'bg-purple-100 text-purple-700 border-purple-200', 
-      icon: <CheckCircle className="w-4 h-4" />,
-      label: 'Ready'
-    },
-    completed: { 
-      color: 'bg-green-100 text-green-700 border-green-200', 
-      icon: <CheckCircle className="w-4 h-4" />,
-      label: 'Completed'
-    },
-    cancelled: { 
-      color: 'bg-red-100 text-red-700 border-red-200', 
-      icon: <XCircle className="w-4 h-4" />,
-      label: 'Cancelled'
-    },
-  };
-
-  const config = statusConfig[order.status];
-
-  return (
-    <div className="bg-white rounded-xl border border-zinc-200 p-6 hover:shadow-lg transition-shadow">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div 
-            className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold"
-            style={{ backgroundColor: primaryColor }}
-          >
-            #{order.orderNumber}
-          </div>
-          <div>
-            <h3 className="font-semibold text-zinc-900 text-lg">{order.customer}</h3>
-            <p className="text-sm text-zinc-500">{order.timestamp}</p>
-          </div>
-        </div>
-
-        <div className="relative">
-          <button
-            onClick={() => setShowActions(!showActions)}
-            className="p-2 rounded-lg hover:bg-zinc-100 transition-colors"
-          >
-            <MoreVertical className="w-5 h-5 text-zinc-600" />
-          </button>
-
-          {showActions && (
-            <>
-              <div 
-                className="fixed inset-0 z-10" 
-                onClick={() => setShowActions(false)}
-              />
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-zinc-200 py-2 z-20">
-                <button
-                  onClick={() => {
-                    onView(order);
-                    setShowActions(false);
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50 flex items-center gap-2"
-                >
-                  <Eye className="w-4 h-4" />
-                  View Details
-                </button>
-                <div className="border-t border-zinc-100 my-1" />
-                {order.status === 'pending' && (
-                  <button
-                    onClick={() => {
-                      onStatusChange(order.id, 'preparing');
-                      setShowActions(false);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
-                  >
-                    Start Preparing
-                  </button>
-                )}
-                {order.status === 'preparing' && (
-                  <button
-                    onClick={() => {
-                      onStatusChange(order.id, 'ready');
-                      setShowActions(false);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
-                  >
-                    Mark as Ready
-                  </button>
-                )}
-                {order.status === 'ready' && (
-                  <button
-                    onClick={() => {
-                      onStatusChange(order.id, 'completed');
-                      setShowActions(false);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
-                  >
-                    Complete Order
-                  </button>
-                )}
-                <button
-                  onClick={() => {
-                    onStatusChange(order.id, 'cancelled');
-                    setShowActions(false);
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                >
-                  Cancel Order
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 text-sm text-zinc-600">
-          <span>{order.items} items</span>
-          {order.tableNumber && (
-            <>
-              <span>•</span>
-              <span>Table {order.tableNumber}</span>
-            </>
-          )}
-        </div>
-        <p className="text-xl font-bold text-zinc-900">NPR {order.total}</p>
-      </div>
-
-      <div className="mt-4 pt-4 border-t border-zinc-100">
-        <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border ${config.color}`}>
-          {config.icon}
-          <span className="text-sm font-medium">{config.label}</span>
-        </div>
-      </div>
-    </div>
-  );
+// Generate order number
+function generateOrderNumber(): string {
+  return Math.floor(Math.random() * 900 + 100).toString();
 }
 
 export default function OrdersPage() {
-  const { tenant } = useTenant();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const { tenantSlug } = useTenant();
+  const token = getAccessToken(tenantSlug ?? '');
 
-  const primaryColor = tenant?.branding?.primaryColor || '#6366F1';
-  const filterOptions = ['all', 'pending', 'preparing', 'ready', 'completed', 'cancelled'];
+  // View state
+  const [currentView, setCurrentView] = useState<POSView>('pos');
 
+  // Menu and items state
+  const [menus, setMenus] = useState<Menu[]>([]);
+  const [allItems, setAllItems] = useState<Map<number, Item[]>>(new Map());
+  const [selectedMenuId, setSelectedMenuId] = useState<number | null>(null);
+  const [isLoadingMenus, setIsLoadingMenus] = useState(true);
+  const [isLoadingItems, setIsLoadingItems] = useState(false);
+
+  // Tables state
+  const [tables, setTables] = useState<Table[]>([]);
+  const [isLoadingTables, setIsLoadingTables] = useState(false);
+
+  // Cart state
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [orderNumber, setOrderNumber] = useState(generateOrderNumber());
+
+  // Selection state
+  const [selectedTable, setSelectedTable] = useState('Select Table');
+  const [selectedDining, setSelectedDining] = useState('Select Dining');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All Category');
+  const [selectedBrand, setSelectedBrand] = useState('Select Brand');
+
+  // Discounts state
+  const [productDiscount, setProductDiscount] = useState(0);
+  const [extraDiscount, setExtraDiscount] = useState(0);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+
+  // Notes modal state
+  const [notesModalOpen, setNotesModalOpen] = useState(false);
+  const [notesItemId, setNotesItemId] = useState<number | null>(null);
+
+  // Processing state
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Load menus on mount
   useEffect(() => {
-    // Simulate API call with mock data
-    setTimeout(() => {
-      setOrders([
-        {
-          id: '1',
-          orderNumber: '1234',
-          customer: 'John Doe',
-          items: 3,
-          total: 850,
-          status: 'preparing',
-          timestamp: '5 mins ago',
-          tableNumber: '12',
-        },
-        {
-          id: '2',
-          orderNumber: '1235',
-          customer: 'Sarah Smith',
-          items: 2,
-          total: 520,
-          status: 'pending',
-          timestamp: '12 mins ago',
-          tableNumber: '8',
-        },
-        {
-          id: '3',
-          orderNumber: '1236',
-          customer: 'Mike Johnson',
-          items: 5,
-          total: 1200,
-          status: 'ready',
-          timestamp: '18 mins ago',
-          tableNumber: '5',
-        },
-        {
-          id: '4',
-          orderNumber: '1237',
-          customer: 'Emma Wilson',
-          items: 1,
-          total: 300,
-          status: 'completed',
-          timestamp: '25 mins ago',
-        },
-        {
-          id: '5',
-          orderNumber: '1238',
-          customer: 'David Brown',
-          items: 4,
-          total: 980,
-          status: 'preparing',
-          timestamp: '32 mins ago',
-          tableNumber: '15',
-        },
-        {
-          id: '6',
-          orderNumber: '1239',
-          customer: 'Lisa Anderson',
-          items: 2,
-          total: 450,
-          status: 'pending',
-          timestamp: '45 mins ago',
-          tableNumber: '3',
-        },
-      ]);
-      setIsLoading(false);
-    }, 800);
+    async function loadMenus() {
+      if (!tenantSlug) return;
+
+      try {
+        setIsLoadingMenus(true);
+        const menuData = await fetchMenus(tenantSlug);
+        setMenus(menuData);
+
+        // Load items for all menus
+        setIsLoadingItems(true);
+        const itemsMap = new Map<number, Item[]>();
+
+        await Promise.all(
+          menuData.map(async (menu) => {
+            if (menu.id) {
+              try {
+                const items = await fetchItems(tenantSlug, menu.id);
+                itemsMap.set(menu.id, items);
+              } catch (err) {
+                console.error(`Failed to load items for menu ${menu.id}:`, err);
+                itemsMap.set(menu.id, []);
+              }
+            }
+          })
+        );
+
+        setAllItems(itemsMap);
+      } catch (err) {
+        console.error('Failed to load menus:', err);
+        setError('Failed to load menus. Please try again.');
+      } finally {
+        setIsLoadingMenus(false);
+        setIsLoadingItems(false);
+      }
+    }
+
+    loadMenus();
+  }, [tenantSlug]);
+
+  // Load tables on mount
+  useEffect(() => {
+    async function loadTables() {
+      if (!tenantSlug) return;
+
+      try {
+        setIsLoadingTables(true);
+        const tablesData = await getAllTables(tenantSlug);
+        setTables(tablesData);
+      } catch (err) {
+        console.error('Failed to load tables:', err);
+        // Don't show error to user, just log it
+      } finally {
+        setIsLoadingTables(false);
+      }
+    }
+
+    loadTables();
+  }, [tenantSlug]);
+
+  // Get filtered items based on selected menu
+  const displayedItems = useMemo(() => {
+    let items: Item[] = [];
+
+    if (selectedMenuId === null) {
+      // Show all items from all menus
+      allItems.forEach((menuItems) => {
+        items = [...items, ...menuItems];
+      });
+    } else {
+      // Show items from selected menu only
+      items = allItems.get(selectedMenuId) || [];
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      items = items.filter((item) =>
+        item.name.toLowerCase().includes(query) ||
+        item.description?.toLowerCase().includes(query)
+      );
+    }
+
+    // Filter only available items
+    items = items.filter((item) => item.isAvailable);
+
+    return items;
+  }, [allItems, selectedMenuId, searchQuery]);
+
+  // Cart operations
+  const addToCart = useCallback((item: Item) => {
+    setCartItems((prev) => {
+      const existingIndex = prev.findIndex((ci) => ci.item.id === item.id);
+
+      if (existingIndex >= 0) {
+        // Increase quantity
+        const updated = [...prev];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          quantity: updated[existingIndex].quantity + 1,
+        };
+        return updated;
+      } else {
+        // Add new item
+        return [...prev, { item, quantity: 1 }];
+      }
+    });
   }, []);
 
-  const handleStatusChange = (orderId: string, newStatus: string) => {
-    setOrders(orders.map(order => 
-      order.id === orderId 
-        ? { ...order, status: newStatus as Order['status'] }
-        : order
-    ));
-  };
+  const updateQuantity = useCallback((itemId: number, delta: number) => {
+    setCartItems((prev) => {
+      const index = prev.findIndex((ci) => ci.item.id === itemId);
+      if (index < 0) return prev;
 
-  const handleViewOrder = (order: Order) => {
-    console.log('View order details:', order);
-    // TODO: Implement order details modal
-  };
+      const newQuantity = prev[index].quantity + delta;
 
-  const filteredOrders = filterStatus === 'all' 
-    ? orders 
-    : orders.filter(order => order.status === filterStatus);
+      if (newQuantity <= 0) {
+        // Remove item
+        return prev.filter((ci) => ci.item.id !== itemId);
+      }
 
-  const stats = {
-    pending: orders.filter(o => o.status === 'pending').length,
-    preparing: orders.filter(o => o.status === 'preparing').length,
-    ready: orders.filter(o => o.status === 'ready').length,
-  };
+      const updated = [...prev];
+      updated[index] = { ...updated[index], quantity: newQuantity };
+      return updated;
+    });
+  }, []);
 
-  if (isLoading) {
+  const removeFromCart = useCallback((itemId: number) => {
+    setCartItems((prev) => prev.filter((ci) => ci.item.id !== itemId));
+  }, []);
+
+  const openNotesModal = useCallback((itemId: number) => {
+    setNotesItemId(itemId);
+    setNotesModalOpen(true);
+  }, []);
+
+  const saveNotes = useCallback((notes: string) => {
+    if (notesItemId === null) return;
+
+    setCartItems((prev) => {
+      const index = prev.findIndex((ci) => ci.item.id === notesItemId);
+      if (index < 0) return prev;
+
+      const updated = [...prev];
+      updated[index] = { ...updated[index], notes };
+      return updated;
+    });
+
+    setNotesModalOpen(false);
+    setNotesItemId(null);
+  }, [notesItemId]);
+
+  // Get notes item for modal
+  const notesItem = useMemo(() => {
+    if (notesItemId === null) return null;
+    return cartItems.find((ci) => ci.item.id === notesItemId) || null;
+  }, [cartItems, notesItemId]);
+
+  // Order operations
+  const handlePlaceOrder = useCallback(async () => {
+    if (!tenantSlug) return;
+
+    // Validate
+    if (selectedTable === 'Select Table') {
+      setError('Please select a table');
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      setError('Cart is empty');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      setError(null);
+
+      const tableNumber = selectedTable.replace('Table ', '');
+
+      // 1. Create/Get Invoice
+      const invoiceResponse = await fetch(`http://${tenantSlug}.menuly:8080/api/v1/invoices`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Internal-API-Key': 'dVJOZclvTjIkVrz3CHp3vgYgyAreoyNLTg3zL24tbfvk'
+         },
+        body: JSON.stringify({ tableNumber: parseInt(tableNumber, 10) })
+      });
+
+      if (!invoiceResponse.ok) {
+        const errorText = await invoiceResponse.text();
+        throw new Error(`Failed to create invoice: ${errorText}`);
+      }
+
+      const invoiceData = await invoiceResponse.json();
+      // Assuming invoiceId is in invoiceData.id based on "Get invoiceId from response"
+      // Adjust if the response structure is different (e.g. invoiceData.data.id)
+      const invoiceId = invoiceData.id || invoiceData.data?.id;
+
+      if (!invoiceId) {
+        throw new Error("Could not retrieve invoice ID from server response");
+      }
+
+      console.log('Invoice ID:', invoiceId);
+
+      // 2. Create Orders
+      // We must verify each order creation
+      const orderPromises = cartItems.map(async (ci) => {
+        const payload = {
+          itemId: ci.item.id,
+          quantity: ci.quantity,
+          additionalNotes: ci.notes || "",
+          tableNumber: parseInt(tableNumber, 10)
+        };
+
+        const res = await fetch(`http://${tenantSlug}.menuly:8080/api/v1/orders`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Internal-API-Key': 'dVJOZclvTjIkVrz3CHp3vgYgyAreoyNLTg3zL24tbfvk'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Failed to create order for item ${ci.item.name}: ${errText}`);
+        }
+
+        return res.json();
+      });
+
+      await Promise.all(orderPromises);
+
+      // Success - clear cart and show message
+      setCartItems([]);
+      // setOrderNumber(generateOrderNumber()); // Keep same order number or regen? Usually regen.
+      setProductDiscount(0);
+      setExtraDiscount(0);
+      setCouponDiscount(0);
+      setSuccessMessage('Order placed successfully!');
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000);
+
+    } catch (err) {
+      console.error('Failed to place order:', err);
+      setError(err instanceof Error ? err.message : 'Failed to place order');
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [tenantSlug, selectedTable, cartItems]);
+
+  // Clear messages on interaction
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  // Render based on current view
+  if (currentView !== 'pos') {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-zinc-900"></div>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-zinc-900">Point of Sale (POS)</h1>
+            <p className="text-sm text-zinc-500">Dashboard • Pos</p>
+          </div>
+          <ViewToggle currentView={currentView} onViewChange={setCurrentView} />
+        </div>
+
+        {/* Placeholder for other views */}
+        <div className="bg-white rounded-xl border border-zinc-200 p-12 text-center">
+          <h2 className="text-xl font-semibold text-zinc-700 mb-2">
+            {currentView === 'qr-orders' && 'QR Menu Orders'}
+            {currentView === 'drafts' && 'Draft Orders'}
+            {currentView === 'table-orders' && <TableBasedOrders />}
+          </h2>
+          {/* <p className="text-zinc-500">This feature is coming soon...</p> */}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-zinc-900 mb-2">Orders</h1>
-        <p className="text-zinc-600">Manage and track your restaurant orders</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900">Point of Sale (POS)</h1>
+          <p className="text-sm text-zinc-500">Dashboard • Pos</p>
+        </div>
+        <ViewToggle currentView={currentView} onViewChange={setCurrentView} />
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-yellow-700 font-medium mb-1">Pending</p>
-              <p className="text-3xl font-bold text-yellow-900">{stats.pending}</p>
-            </div>
-            <Clock className="w-12 h-12 text-yellow-500" />
-          </div>
-        </div>
-
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-blue-700 font-medium mb-1">Preparing</p>
-              <p className="text-3xl font-bold text-blue-900">{stats.preparing}</p>
-            </div>
-            <ShoppingBag className="w-12 h-12 text-blue-500" />
-          </div>
-        </div>
-
-        <div className="bg-purple-50 border border-purple-200 rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-purple-700 font-medium mb-1">Ready</p>
-              <p className="text-3xl font-bold text-purple-900">{stats.ready}</p>
-            </div>
-            <CheckCircle className="w-12 h-12 text-purple-500" />
-          </div>
-        </div>
-      </div>
-
-      {/* Filter Bar */}
-      <div className="bg-white rounded-xl border border-zinc-200 p-6">
-        <div className="flex items-center gap-3">
-          <Filter className="w-5 h-5 text-zinc-600" />
-          <span className="font-medium text-zinc-900">Filter:</span>
-          <div className="flex gap-2 overflow-x-auto">
-            {filterOptions.map((option) => (
-              <button
-                key={option}
-                onClick={() => setFilterStatus(option)}
-                className={`px-4 py-2 rounded-lg font-medium capitalize whitespace-nowrap transition-colors ${
-                  filterStatus === option
-                    ? 'text-white'
-                    : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
-                }`}
-                style={filterStatus === option ? { backgroundColor: primaryColor } : {}}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Orders Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredOrders.map((order) => (
-          <OrderCard
-            key={order.id}
-            order={order}
-            onStatusChange={handleStatusChange}
-            onView={handleViewOrder}
-          />
-        ))}
-      </div>
-
-      {filteredOrders.length === 0 && (
-        <div className="bg-white rounded-xl border border-zinc-200 p-12 text-center">
-          <ShoppingBag className="w-16 h-16 text-zinc-300 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-zinc-900 mb-2">No orders found</h3>
-          <p className="text-zinc-500">
-            {filterStatus === 'all' 
-              ? 'No orders yet' 
-              : `No ${filterStatus} orders`}
-          </p>
+      {/* Success/Error Messages */}
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+          {successMessage}
         </div>
       )}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      {/* Main POS Layout */}
+      <div className="flex gap-4 h-[1000px]" >
+        {/* Left Panel - Products */}
+        <div className="flex-[6] flex flex-col bg-white rounded-xl border border-zinc-200 overflow-hidden">
+          {/* Search and Filters */}
+          <div className="p-4 border-b border-zinc-200">
+            <div className="flex items-center gap-4 mb-4">
+              {/* Search */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search in products"
+                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent"
+                />
+              </div>
+
+              {/* Category Filter */}
+              <div className="relative">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="appearance-none pl-4 pr-10 py-2.5 bg-white border border-zinc-200 rounded-lg text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+                >
+                  <option>All Category</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+              </div>
+
+              {/* Brand Filter */}
+              <div className="relative">
+                <select
+                  value={selectedBrand}
+                  onChange={(e) => setSelectedBrand(e.target.value)}
+                  className="appearance-none pl-4 pr-10 py-2.5 bg-white border border-zinc-200 rounded-lg text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+                >
+                  <option>Select Brand</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Menu Filter Tabs */}
+            <MenuFilterTabs
+              menus={menus}
+              selectedMenuId={selectedMenuId}
+              onSelectMenu={setSelectedMenuId}
+            />
+          </div>
+
+          {/* Products Grid */}
+          <div className="flex-1 overflow-y-auto p-4">
+            <ProductGrid
+              items={displayedItems}
+              onAddToCart={addToCart}
+              isLoading={isLoadingMenus || isLoadingItems}
+            />
+          </div>
+        </div>
+
+        {/* Right Panel - Invoice */}
+        <div className="flex-[4]">
+          <InvoicePanel
+            cartItems={cartItems}
+            selectedTable={selectedTable}
+            selectedDining={selectedDining}
+            orderNumber={orderNumber}
+            productDiscount={productDiscount}
+            extraDiscount={extraDiscount}
+            couponDiscount={couponDiscount}
+            tables={tables}
+            onTableChange={setSelectedTable}
+            onDiningChange={setSelectedDining}
+            onQuantityChange={updateQuantity}
+            onRemoveItem={removeFromCart}
+            onAddNotes={openNotesModal}
+            onProductDiscountChange={setProductDiscount}
+            onExtraDiscountChange={setExtraDiscount}
+            onCouponDiscountChange={setCouponDiscount}
+            onPlaceOrder={handlePlaceOrder}
+            isProcessing={isProcessing}
+          />
+        </div>
+      </div>
+
+      {/* Add Notes Modal */}
+      <AddNotesModal
+        isOpen={notesModalOpen}
+        onClose={() => {
+          setNotesModalOpen(false);
+          setNotesItemId(null);
+        }}
+        onSave={saveNotes}
+        itemName={notesItem?.item.name || ''}
+        initialNotes={notesItem?.notes || ''}
+      />
     </div>
   );
 }

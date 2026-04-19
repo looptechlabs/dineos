@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  # Your Next.js application
+  app:
+    build:
+      context: .              # Build from current directory
+      dockerfile: Dockerfile  # Use this Dockerfile
+      target: runner          # Build up to "runner" stage
+    
+    container_name: restaurantsys-app
+    
+    # Port mapping: localhost:3000 → container:3000
+    ports:
+      - "3000:3000"
+    
+    # Environment variables
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080/api/v1}
+      - NEXT_PUBLIC_ROOT_DOMAIN=${NEXT_PUBLIC_ROOT_DOMAIN:-dineos.localhost:3000}
+    
+    # Restart policy: auto-restart if crashes
+    restart: always
+    
+    networks:
+      - app-network
+
+# Define networks
+networks:
+  app-network:
+    driver: bridge

@@ -84,8 +84,15 @@ export default function AddItemModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={handleClose}
+      />
+
+      {/* Modal */}
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-zinc-200 sticky top-0 bg-white">
           <h2 className="text-xl font-semibold text-zinc-900">Add New Item</h2>
@@ -116,11 +123,8 @@ export default function AddItemModal({
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-opacity-50 focus:border-transparent"
-              style={{ 
-                focusRingColor: primaryColor,
-                outlineColor: primaryColor 
-              }}
+              className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-offset-0 focus:border-transparent transition-all duration-200 shadow-sm"
+              style={{ '--tw-ring-color': primaryColor } as React.CSSProperties}
               placeholder="e.g., Chicken Pizza"
             />
           </div>
@@ -135,11 +139,8 @@ export default function AddItemModal({
               required
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-opacity-50 focus:border-transparent resize-none"
-              style={{ 
-                focusRingColor: primaryColor,
-                outlineColor: primaryColor 
-              }}
+              className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-offset-0 focus:border-transparent transition-all duration-200 shadow-sm resize-none"
+              style={{ '--tw-ring-color': primaryColor } as React.CSSProperties}
               rows={3}
               placeholder="Brief description of the item"
             />
@@ -158,11 +159,8 @@ export default function AddItemModal({
               required
               value={formData.price}
               onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-              className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-opacity-50 focus:border-transparent"
-              style={{ 
-                focusRingColor: primaryColor,
-                outlineColor: primaryColor 
-              }}
+              className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-offset-0 focus:border-transparent transition-all duration-200 shadow-sm"
+              style={{ '--tw-ring-color': primaryColor } as React.CSSProperties}
               placeholder="10.99"
             />
           </div>
@@ -177,11 +175,8 @@ export default function AddItemModal({
               required
               value={formData.type}
               onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-              className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-opacity-50 focus:border-transparent"
-              style={{ 
-                focusRingColor: primaryColor,
-                outlineColor: primaryColor 
-              }}
+              className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-offset-0 focus:border-transparent transition-all duration-200 shadow-sm"
+              style={{ '--tw-ring-color': primaryColor } as React.CSSProperties}
             >
               <option value="VEGETARIAN">Vegetarian</option>
               <option value="NON_VEGETARIAN">Non-Vegetarian</option>
